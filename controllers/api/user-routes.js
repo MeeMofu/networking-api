@@ -1,5 +1,3 @@
-const { userInfo } = require('os');
-
 const router = require('express').Router();
 const { User , Thought } = require('../../models');
 
@@ -14,8 +12,15 @@ router.get('/', (req, res)=>{
 // get single user
 router.get('/:id', (req,res)=>{
     User.findOne({_id: req.params.id})
-        .populate('friends')
-        .populate('thoughts')
+        .populate({
+            path: 'friends',
+            select: '-thoughts -__v'
+        })
+        .populate({
+            path: 'thoughts',
+            select: '-reactions -__v'
+        })
+        .select('-__v')
         .then(data => (!data)? res.status(404).json({ message: 'No user found with this id!' }) : res.json(data))
         .catch(err => res.sendStatus(500))
 })
@@ -53,7 +58,14 @@ router.put('/:id', (req,res) => {
 // remove user
 router.delete('/:id', (req,res) => {
     User.findOneAndDelete ({_id:req.params.id})
-    .then(data => (!data)? res.status(404).json({ message: 'No user found with this id!' }) : res.json(data))
+    .then(data => {
+        if (!data) return res.status(404).json({ message:  'No user found with this id!'})
+        else {
+            // data.thoughts returns an array of id of each thoughts associated, which is then feed into $in to filter out the thoughts to be deleted
+            Thought.deleteMany({_id: {$in: data.thoughts}})
+                .then((data) => res.json(data))
+        }
+    })
     .catch(err => res.sendStatus(500))
 })
 
@@ -66,7 +78,7 @@ router.post('/:id/friends/:fid', (req,res) => {
                 res.status(404).json({ message: 'No friend found with this id!' })
                 return;
             }
-            // then find and add friend to user
+            // then find and add friend to user, $addToSet ensure no duplicates
             User.findOneAndUpdate({_id: req.params.id}, { $addToSet: {friends: req.params.fid}} , {new: true})
             .then(data => (!data)? res.status(404).json({ message: 'No user found with this id!' }) : res.json(data))
         })
