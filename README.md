@@ -10,13 +10,13 @@
 
 ## Description
 
-This is an app that provide API routes to access a MongoDB, providing CRUD method for a social media application. This program used [express]() and [mongoose] NPM packages
+This is an app that provide API routes to access a MongoDB, providing CRUD method for a social media application. This program used [express](https://www.npmjs.com/package/express) and [mongoose](https://www.npmjs.com/package/mongoose) NPM packages
 
 ## Installation
 
 To use this application, it's required to have node.js installed. Which can be found in their [website](https://nodejs.org/en/download/).
 
-Once you have cloned the files and had node.js installed, just run the install command in the terminal:
+Once you have cloned the files and had node.js installed, install the needed packages by:
  
     npm install
 
