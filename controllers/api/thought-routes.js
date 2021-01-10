@@ -7,13 +7,14 @@ router.get('/', (req, res)=>{
     Thought.find({})
         .select('-__v')
         .then(data => res.json(data))
-        .catch(err => res.sendStatus(500))
+        .catch(err => {console.log(err);res.sendStatus(500)})
 });
 
 // get single thought
 router.get('/:id', (req,res)=>{
     Thought.findOne({_id: req.params.id})
         .populate('reactions')
+        .select('-__v')
         .then(data => (!data)? res.status(404).json({ message: 'No thought found with this id!' }) : res.json(data))
         .catch(err => res.sendStatus(500))
 })
@@ -22,16 +23,17 @@ router.get('/:id', (req,res)=>{
 router.post('/:uid', (req,res) => {
     Thought.create(req.body)
         .then(({_id}) => {
+            console.log(_id);
             return User.findOneAndUpdate(
                 {_id: req.params.uid},
-                {push: {thoughts: _id}}, {new: true}
+                {$push: {thoughts: _id}}, {new: true}
             );
         })
         .then(data => (!data)? res.status(404).json({ message: 'No user found with this id!' }) : res.json({ message: 'Thought added!' }))
         .catch(err => res.sendStatus(500))
 })
 
-// add thought
+// edit thought
 router.put('/:id', (req,res) => {
     Thought.findOneAndUpdate({_id: req.params.id}, req.body, {new: true, runValidators:true})
     .then(data => (!data)? res.status(404).json({ message: 'No thought found with this id!' }) : res.json(data))
@@ -48,7 +50,30 @@ router.delete('/:id', (req,res) => {
             {$pull: {thoughts: req.params.id}}, {new: true}
         )
     })
+    .then(data => res.json({ message:  'Thought is deleted'}))
     .catch(err => res.sendStatus(500))
+})
+
+// add reaction
+router.post('/:id/reactions/', (req,res) => {
+    Thought.findOneAndUpdate(
+        {_id: req.params.id},
+        {$addToSet: {reactions: req.body}},
+        {runValidators: true, new: true}
+    )
+        .then(data => (!data)? res.status(404).json({ message: 'No thought found with this id!' }) : res.json(data))
+        .catch(err => res.sendStatus(500))
+})
+
+// remove reaction
+router.delete('/:id/reactions/:rid', (req,res) => {
+    Thought.findOneAndUpdate(
+        {_id: req.params.id},
+        {$pull: {reactions: {reactionId: req.params.rid}}},
+        {runValidators: true, new: true}
+    )
+        .then(data => (!data)? res.status(404).json({ message: 'No thought found with this id!' }) : res.json({ message: 'Thought removed' }))
+        .catch(err => res.sendStatus(500))
 })
 
 module.exports = router;

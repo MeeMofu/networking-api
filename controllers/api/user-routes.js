@@ -18,7 +18,7 @@ router.get('/:id', (req,res)=>{
         })
         .populate({
             path: 'thoughts',
-            select: '-reactions -__v'
+            select: ' -__v'
         })
         .select('-__v')
         .then(data => (!data)? res.status(404).json({ message: 'No user found with this id!' }) : res.json(data))
